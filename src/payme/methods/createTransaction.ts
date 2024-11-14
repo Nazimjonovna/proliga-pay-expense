@@ -16,6 +16,7 @@ export async function createTransaction(
 ) {
   const userId = Number(createTransactionDto.params?.account?.package_id);
   const amount = createTransactionDto.params.amount;
+
   if (!userId) {
     return {
       error: {
@@ -29,23 +30,42 @@ export async function createTransaction(
     };
   }
 
-  const pcg = await this.prismaService.pay_package.findUnique({
-    where: { id: userId, price: amount},
+  const pkg = await  this.prismaService.pay_package.findUnique({
+    where: { id: userId },
   });
-  if (!pcg) {
+
+  if (!pkg) {
     return {
       error: {
         code: ErrorStatusCodes.TransactionNotAllowed,
         message: {
-          uz: 'Noto‘g‘ri avtorizatsiya',
-          en: 'Invalid authorization',
-          ru: 'Неверная авторизация',
+          ru: 'Transaction topilomadi',
+          uz: 'Transaction topilomadi',
+          en: 'Transaction topilomadi',
         },
       },
     };
   }
 
-  if (pcg.price < amount) {
+
+  const pcg = await this.prismaService.pay_package.findUnique({
+    where: { id: userId, price: amount},
+  });
+
+  if (!pcg) {
+    return {
+      error: {
+        code: ErrorStatusCodes.InvalidAmount,
+        message: {
+          ru: 'Неверная сумма',
+          uz: 'Incorrect amount',
+          en: 'Incorrect amount',
+        },
+      },
+    };
+  }
+
+  if (pcg.price > amount) {
     return {
       error: {
         code: ErrorStatusCodes.InvalidAmount,
@@ -106,12 +126,14 @@ export async function createTransaction(
 
   const newTransaction = await this.prismaService.pay_expense.create({
     data: {
-      package_id: userId,
+      pay_package_id: userId,
       price: amount,
       transaction_id: createTransactionDto.params.id,
       state: 1,
       created_at: new Date(),
       updated_at: new Date(),
+      tour_id: 438,
+      team_id: 895,
     },
   });
 
